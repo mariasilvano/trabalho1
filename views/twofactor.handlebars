@@ -1,0 +1,15 @@
+<h1>Autenticação de Dois Fatores</h1>
+
+{{#if error}}
+<p style="color:red">{{error}}</p>
+{{/if}}
+
+<form action="/login" method="post">
+  <input type="hidden" name="login" value="{{login}}">
+  <input type="hidden" name="senha" value="{{senha}}">
+  
+  <label for="token">Código 2FA:</label>
+  <input type="text" name="token" maxlength="6" required>
+
+  <button type="submit">Validar</button>
+</form>

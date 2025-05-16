@@ -1,0 +1,21 @@
+{
+  "name": "trabalho1",
+  "version": "1.0.0",
+  "description": "trabalho1 ",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.1.0",
+    "express-handlebars": "^8.0.3",
+    "express-session": "^1.18.1",
+    "pg": "^8.16.0",
+    "qrcode": "^1.5.4",
+    "sequelize": "^6.37.7",
+    "speakeasy": "^2.0.0",
+    "trabalho1": "file:"
+  }
+}
