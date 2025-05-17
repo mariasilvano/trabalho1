@@ -36,6 +36,7 @@ module.exports = {
   },
 
   async postTwoFactor(req, res) {
+    console.log('ENTROU NO POST /twofactor');
     const { token } = req.body;
 
     if (!req.session.tempUser) {
@@ -49,7 +50,7 @@ module.exports = {
         secret: usuario.twoFactorSecret,
         encoding: 'base32',
         token,
-        window: 1,
+        window: 2,
       });
 
       if (!tokenValid) {
@@ -61,7 +62,7 @@ module.exports = {
       req.session.login = usuario.login;
       delete req.session.tempUser;
 
-      res.render('home', { layout: 'noMenu.handlebars', user: usuario.login });
+    res.redirect('/chat');
     } catch (err) {
       console.error(err);
       res.redirect('/');

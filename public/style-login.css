@@ -31,7 +31,8 @@ body *{
     color: #77d4ff;
 }
 .left-login-img{
-    width: 35vw;
+    width: 30vw;
+    border-radius: 50px;
 }
 .right-login{
     width: 50vw;
