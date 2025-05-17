@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Chat Seguro com Handlebars</title>
+<link rel="stylesheet" href="/css/chat.css" />
+</head>
+<body>
+
+<header>Chat Seguro: Alice → Bob</header>
+
+<div id="chat"></div>
+
+<div id="input-area">
+  <input id="input-message" type="text" placeholder="Digite uma mensagem para Bob" />
+  <button id="send-btn">Enviar</button>
+</div>
+
+<script id="chat-template" type="text/x-handlebars-template">
+  {{#each messages}}
+    <div class="message {{sender}}">{{content}}</div>
+  {{/each}}
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/handlebars@latest/dist/handlebars.min.js"></script>
+
+<script>
+(async () => {
+  const chatDiv = document.getElementById('chat');
+  const input = document.getElementById('input-message');
+  const sendBtn = document.getElementById('send-btn');
+
+  const chatHistory = [
+    { sender: 'bob', content: "Sistema pronto para troca segura de mensagens." }
+  ];
+
+  const source = document.getElementById('chat-template').innerHTML;
+  const template = Handlebars.compile(source);
+
+  function renderChat() {
+    chatDiv.innerHTML = template({ messages: chatHistory });
+    chatDiv.scrollTop = chatDiv.scrollHeight;
+  }
+
+  renderChat();
+
+  const aliceKeyPair = await window.crypto.subtle.generateKey(
+    {
+      name: "RSA-PSS",
+      modulusLength: 2048,
+      publicExponent: new Uint8Array([1, 0, 1]),
+      hash: "SHA-256",
+    },
+    true,
+    ["sign", "verify"]
+  );
+
+  const aliceEncKeyPair = await window.crypto.subtle.generateKey(
+    {
+      name: "RSA-OAEP",
+      modulusLength: 2048,
+      publicExponent: new Uint8Array([1, 0, 1]),
+      hash: "SHA-256"
+    },
+    true,
+    ["encrypt", "decrypt"]
+  );
+
+  const bobKeyPair = await window.crypto.subtle.generateKey(
+    {
+      name: "RSA-PSS",
+      modulusLength: 2048,
+      publicExponent: new Uint8Array([1, 0, 1]),
+      hash: "SHA-256",
+    },
+    true,
+    ["sign", "verify"]
+  );
+
+  const bobEncKeyPair = await window.crypto.subtle.generateKey(
+    {
+      name: "RSA-OAEP",
+      modulusLength: 2048,
+      publicExponent: new Uint8Array([1, 0, 1]),
+      hash: "SHA-256"
+    },
+    true,
+    ["encrypt", "decrypt"]
+  );
+
+  async function exportPublicKey(key) {
+    const spki = await window.crypto.subtle.exportKey("spki", key);
+    return btoa(String.fromCharCode(...new Uint8Array(spki)));
+  }
+  async function importPublicKey(spki_b64, algo) {
+    const binary = Uint8Array.from(atob(spki_b64), c => c.charCodeAt(0));
+    return window.crypto.subtle.importKey(
+      "spki",
+      binary.buffer,
+      algo,
+      true,
+      ["verify"]
+    );
+  }
+
+  const aliceCert = {
+    name: "Alice",
+    publicKey: await exportPublicKey(aliceKeyPair.publicKey)
+  };
+
+  async function verifyCertificate(cert) {
+    return cert.name === "Alice" && cert.publicKey;
+  }
+
+  async function hashMessage(msg) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(msg);
+    const hashBuffer = await window.crypto.subtle.digest("SHA-256", data);
+    return new Uint8Array(hashBuffer);
+  }
+
+  async function generateAESKey() {
+    return await window.crypto.subtle.generateKey(
+      { name: "AES-GCM", length: 256 },
+      true,
+      ["encrypt", "decrypt"]
+    );
+  }
+
+  async function aesEncrypt(key, plaintext) {
+    const encoder = new TextEncoder();
+    const iv = window.crypto.getRandomValues(new Uint8Array(12));
+    const encoded = encoder.encode(plaintext);
+    const cipherBuffer = await window.crypto.subtle.encrypt(
+      { name: "AES-GCM", iv },
+      key,
+      encoded
+    );
+    return { cipher: new Uint8Array(cipherBuffer), iv };
+  }
+
+  async function aesDecrypt(key, cipher, iv) {
+    try {
+      const decrypted = await window.crypto.subtle.decrypt(
+        { name: "AES-GCM", iv },
+        key,
+        cipher
+      );
+      const decoder = new TextDecoder();
+      return decoder.decode(decrypted);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async function rsaEncrypt(publicKey, data) {
+    return await window.crypto.subtle.encrypt(
+      { name: "RSA-OAEP" },
+      publicKey,
+      data
+    );
+  }
+
+  async function rsaDecrypt(privateKey, data) {
+    return await window.crypto.subtle.decrypt(
+      { name: "RSA-OAEP" },
+      privateKey,
+      data
+    );
+  }
+
+  async function signData(privateKey, data) {
+    return await window.crypto.subtle.sign(
+      { name: "RSA-PSS", saltLength: 32 },
+      privateKey,
+      data
+    );
+  }
+
+  async function verifySignature(publicKey, signature, data) {
+    return await window.crypto.subtle.verify(
+      { name: "RSA-PSS", saltLength: 32 },
+      publicKey,
+      signature,
+      data
+    );
+  }
+
+  function bufToBase64(buf) {
+    return btoa(String.fromCharCode(...new Uint8Array(buf)));
+  }
+  function base64ToBuf(b64) {
+    return Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+  }
+
+  async function aliceSendMessage(text) {
+    chatHistory.push({ sender: 'alice', content: `Alice: ${text}` });
+    renderChat();
+
+    const aesKey = await generateAESKey();
+    const { cipher, iv } = await aesEncrypt(aesKey, text);
+    const rawAESKey = await window.crypto.subtle.exportKey("raw", aesKey);
+    const encryptedAESKey = await rsaEncrypt(bobEncKeyPair.publicKey, rawAESKey);
+    const msgHash = await hashMessage(text);
+    const signature = await signData(aliceKeyPair.privateKey, msgHash);
+
+    const pacote = {
+      cipher: bufToBase64(cipher),
+      iv: bufToBase64(iv),
+      encryptedAESKey: bufToBase64(encryptedAESKey),
+      signature: bufToBase64(signature),
+      certificate: aliceCert,
+    };
+
+    setTimeout(() => bobReceiveMessage(pacote), 1000);
+  }
+
+  async function bobReceiveMessage(pacote) {
+    const certValid = await verifyCertificate(pacote.certificate);
+    if (!certValid) {
+      chatHistory.push({ sender: 'bob', content: "Mensagem rejeitada: certificado inválido." });
+      renderChat();
+      return;
+    }
+    const alicePubKey = await importPublicKey(pacote.certificate.publicKey, {
+      name: "RSA-PSS",
+      hash: "SHA-256",
+    });
+
+    const encryptedAESKeyBuf = base64ToBuf(pacote.encryptedAESKey).buffer;
+    const rawAESKey = await rsaDecrypt(bobEncKeyPair.privateKey, encryptedAESKeyBuf);
+
+    const aesKey = await window.crypto.subtle.importKey(
+      "raw",
+      rawAESKey,
+      "AES-GCM",
+      true,
+      ["decrypt"]
+    );
+
+    const cipherBuf = base64ToBuf(pacote.cipher).buffer;
+    const iv = base64ToBuf(pacote.iv);
+    const decryptedMsg = await aesDecrypt(aesKey, cipherBuf, iv);
+    if (decryptedMsg === null) {
+      chatHistory.push({ sender: 'bob', content: "Erro ao decifrar a mensagem." });
+      renderChat();
+      return;
+    }
+
+    const msgHash = await hashMessage(decryptedMsg);
+    const signatureBuf = base64ToBuf(pacote.signature).buffer;
+    const validSig = await verifySignature(alicePubKey, signatureBuf, msgHash);
+
+    if (!validSig) {
+      chatHistory.push({ sender: 'bob', content: "Mensagem rejeitada: assinatura inválida." });
+      renderChat();
+      return;
+    }
+
+    chatHistory.push({ sender: 'bob', content: `Bob recebeu: ${decryptedMsg}` });
+    renderChat();
+  }
+
+  sendBtn.addEventListener('click', () => {
+    const text = input.value.trim();
+    if (text) {
+      aliceSendMessage(text);
+      input.value = '';
+    }
+  });
+
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') sendBtn.click();
+  });
+})();
+</script>
+</body>
+</html>
