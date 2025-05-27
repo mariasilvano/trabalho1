@@ -1,20 +1,20 @@
 <div class="main-login">
-    <div class="left-login">
-        <h1>Autenticação de dois fatores</h1>
+  <div class="left-login">
+    <h1>Autenticação de dois fatores</h1>
 
-        {{#if error}}
-        <p style="color:red">{{error}}</p>
-        {{/if}}
+    {{#if error}}
+      <p style="color:red">{{error}}</p>
+    {{/if}}
 
-        <form action="/twofactor" method="post">
-          <input type="hidden" name="login" value="{{login}}">
-          <input type="hidden" name="senha" value="{{senha}}">
-          <div class="textfield">
-            <label for="token">Código 2FA:</label>
-            <input type="text" name="token" maxlength="6" required>
-          </div>
-          <button type="submit" class="btn-login">Validar</button>
-        </form>
+    <form action="/twofactor" method="post">
+      <input type="hidden" name="login" value="{{login}}">
+      <input type="hidden" name="senha" value="{{senha}}">
+      <div class="textfield">
+        <label for="token">Código 2FA:</label>
+        <input type="text" name="token" maxlength="6" required />
       </div>
-    </div>
+      <button type="submit" class="btn-login">Validar</button>
+    </form>
+  </div>
 </div>
+

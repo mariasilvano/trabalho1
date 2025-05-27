@@ -1,19 +1,25 @@
 <div class="main-login">
     <div class="left-login">
         <h1>Faça login</h1>
-        <img src="images/Safe.gif" class="left-login-img" alt="safe">
+        <img src="images/Safe.gif" class="left-login-img" alt="safe" />
     </div>
     <div class="right-login">
         <div class="card-login">
             <h1>LOGIN</h1>
+            {{#if erro}}
+              <p style="color: red;">{{erro}}</p>
+            {{/if}}
+            {{#if sucesso}}
+              <p style="color: green;">{{sucesso}}</p>
+            {{/if}}
             <form action="/login" method="post">
                 <div class="textfield">
                     <label for="usuario">Usuário</label>
-                    <input type="text" name="login" placeholder="Usuário">
+                    <input type="text" name="login" placeholder="Usuário" required />
                 </div>
                 <div class="textfield">
                     <label for="senha">Senha</label>
-                    <input type="password" name="senha" placeholder="Senha">
+                    <input type="password" name="senha" placeholder="Senha" required />
                 </div>
                 <button type="submit" class="btn-login">Entrar</button>
             </form>

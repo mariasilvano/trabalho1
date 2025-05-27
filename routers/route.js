@@ -1,18 +1,23 @@
 const express = require('express');
 const route = express.Router();
-
 const controllerLogin = require('../controllers/controllerLogin');
-const controllerMensagem = require('../controllers/controllerChat');
+const controllerChat = require('../controllers/controllerChat');
 
-// Rotas
-route.get("/", controllerLogin.getLogin);
-route.post("/login", controllerLogin.postLogin);
+// Rota inicial
+route.get('/', (req, res) => res.redirect('/login'));
 
-route.post('/mandarMensagem', controllerMensagem.mandarMensagem);
-route.get('/ListarMensagem/:destinatario', controllerMensagem.listarMensagensPorDestinatario);
+// Login e Two-Factor Authentication
+route.get('/login', controllerLogin.getLogin);
+route.post('/login', controllerLogin.postLogin);
 route.get('/twofactor', controllerLogin.getTwoFactor);
 route.post('/twofactor', controllerLogin.postTwoFactor);
 
-route.get('/chat', controllerMensagem.get);
+// Página do chat principal (protegido por sessão)
+route.get('/chat', controllerChat.getChat);
+
+// API - Salvar nova mensagem
+route.post('/salvarMensagem', controllerChat.salvarMensagem);
+// API - Listar mensagens (do usuário logado)
+route.get('/listarMensagens', controllerChat.listarMensagens);
 
 module.exports = route;
