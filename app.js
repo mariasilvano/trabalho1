@@ -1,7 +1,7 @@
 const express = require('express');
 const path = require('path');
 const handlebars = require('express-handlebars');
-const db = require('./models');  
+const db = require('./models');
 const speakeasy = require('speakeasy');
 const session = require('express-session');
 const QRCode = require('qrcode');
@@ -13,7 +13,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// CONFIGURAÇÃO DO SESSION
+// CONFIGURAÇÃO DA SESSION
 app.use(session({
   secret: 'SegredoSecreto',
   resave: false,
@@ -23,14 +23,9 @@ app.use(session({
 
 // CONFIGURAÇÃO DO HANDLEBARS
 app.engine('handlebars', handlebars.engine({
-  defaultLayout: 'main',
   helpers: {
     if: function (conditional, options) {
-      if (conditional) {
-        return options.fn(this);
-      } else {
-        return options.inverse(this);
-      }
+      return conditional ? options.fn(this) : options.inverse(this);
     },
     switch: function (value, options) {
       this._switch_value_ = value;
@@ -45,14 +40,16 @@ app.engine('handlebars', handlebars.engine({
     }
   }
 }));
-
 app.set('view engine', 'handlebars');
 
 // ROTAS
 app.use('/', routes);
 
-/* SYNC E GERAÇÃO DE USUÁRIOS COM 2FA E QR CODES 
-db.sequelize.sync({ force: true }).then(async () => {
+// SYNC DO BANCO E GERAÇÃO DE USUÁRIOS COM 2FA
+const { inicializarChaves } = require('./controllers/controllerChat');
+const resetarBanco = true;
+
+db.sequelize.sync({ force: resetarBanco }).then(async () => {
   console.log('Banco sincronizado com force: true');
 
   const secretAlice = speakeasy.generateSecret({ length: 20, name: 'SeuApp (Alice)' });
@@ -61,7 +58,6 @@ db.sequelize.sync({ force: true }).then(async () => {
   await db.Usuario.create({ login: 'Alice', senha: '123', twoFactorSecret: secretAlice.base32 });
   await db.Usuario.create({ login: 'Bob', senha: '1234', twoFactorSecret: secretBob.base32 });
 
-   //Exibe os QR Codes no console (apenas uma vez cada)
   try {
     console.log('QR Code para Alice:');
     const qrAlice = await QRCode.toString(secretAlice.otpauth_url, { type: 'terminal' });
@@ -75,11 +71,13 @@ db.sequelize.sync({ force: true }).then(async () => {
   } catch (err) {
     console.error('Erro ao gerar QR Codes:', err);
   }
+
+  // Gera as chaves RSA e certificados para todos os usuários
+  await inicializarChaves();
+
+  app.listen(8082, () => {
+    console.log('Servidor rodando em http://localhost:8082');
+  });
 }).catch(err => {
   console.error('Erro ao sincronizar o banco:', err);
-});*/
-
-// INICIALIZA O SERVIDOR
-app.listen(8082, () => {
-  console.log('Servidor rodando em http://localhost:8082');
 });
