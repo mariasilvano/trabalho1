@@ -95,6 +95,22 @@ header {
   background: #5ca1f9;
 }
 
+#fetch-btn {
+  margin-left: 10px;
+  background: #77d4ff;
+  border: none;
+  border-radius: 20px;
+  padding: 0 20px;
+  font-weight: bold;
+  color: #201b2c;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+#fetch-btn:hover {
+  background: #5ca1f9;
+}
+
 /* Scrollbar styling for #chat */
 #chat::-webkit-scrollbar {
   width: 8px;
