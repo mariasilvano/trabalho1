@@ -91,13 +91,13 @@ async function listarMensagens(req, res) {
         };
       }
 
-      // ✅ Verifica integridade (hash)
+      
       const hashCalculado = crypto.createHash('sha256').update(mensagemOriginal).digest('base64');
       if (hashCalculado !== msg.hashMensagem) {
         erros.push('Hash inválido');
       }
 
-      // ✅ Verifica autenticidade (assinatura e certificado)
+      
       const resultadoAssinatura = verificarAssinatura(
         mensagemOriginal,
         msg.assinaturaDigital,
@@ -108,7 +108,7 @@ async function listarMensagens(req, res) {
         erros.push(resultadoAssinatura.erro);
       }
 
-      // ✅ Verifica se o certificado é do remetente esperado
+      
       try {
         const certificado = JSON.parse(msg.certificado);
         if (certificado.nome !== remetente) {
