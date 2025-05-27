@@ -47,7 +47,7 @@ app.use('/', routes);
 
 // SYNC DO BANCO E GERAÇÃO DE USUÁRIOS COM 2FA
 const { inicializarChaves } = require('./controllers/controllerChat');
-const resetarBanco = true;
+const resetarBanco = true; // dessa forma está resetando o banco a cada execução, então, se necessário, basta alterar para "false"
 
 db.sequelize.sync({ force: resetarBanco }).then(async () => {
   console.log('Banco sincronizado com force: true');

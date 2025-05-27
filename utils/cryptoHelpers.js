@@ -17,7 +17,7 @@ function verificarAssinatura(mensagem, assinaturaBase64, certificadoJson) {
       return { valido: false, erro: 'Certificado inválido' };
     }
 
-    const chaveDer = Buffer.from(certificado.chavePublica, 'base64'); // CORRETO AGORA
+    const chaveDer = Buffer.from(certificado.chavePublica, 'base64'); 
     const chavePublica = crypto.createPublicKey({
       key: chaveDer,
       format: 'der',
