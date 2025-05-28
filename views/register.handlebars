@@ -1,0 +1,75 @@
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Chat Seguro</title>
+    <link rel="stylesheet" href="/style-register.css" />
+</head>
+
+<body>
+    {{#if qrCode}}
+    <div id="modal-2fa" class="modal-overlay">
+        <div class="modal">
+            <h2>Ative a Autenticação em Duas Etapas</h2>
+            <p>Escaneie este QR Code no seu aplicativo autenticador:</p>
+            <img src="{{qrCode}}" alt="QR Code 2FA" />
+            <p>Ou digite esta chave manualmente:</p>
+            <strong>{{chaveManual}}</strong>
+            <button id="fechar-modal">Fechar</button>
+        </div>
+    </div>
+    {{/if}}
+
+    <div class="main-login">
+        <div class="left-login">
+            <h1>Crie sua conta</h1>
+            <img src="images/Safe.gif" class="left-login-img" alt="safe" />
+        </div>
+        <div class="right-login">
+            <div class="card-login">
+                <h1>Cadastrar</h1>
+
+                {{#if error}}
+                <p style="color: red;">{{error.erro}}</p>
+                {{/if}}
+                {{#if sucesso}}
+                <p style="color: green;">{{sucesso}}</p>
+                {{/if}}
+
+                <form action="/register" method="post">
+                    <div class="textfield">
+                        <label for="usuario">Email</label>
+                        <input type="text" name="login" placeholder="Email" required />
+                    </div>
+                    <div class="textfield">
+                        <label for="senha">Senha</label>
+                        <input type="password" name="senha" placeholder="Senha" required />
+                    </div>
+                    <div class="textfield">
+                        <label for="confirmarSenha">Confirmar Senha</label>
+                        <input type="password" name="confirmarSenha" id="confirmarSenha" placeholder="Confirme a senha"
+                            required />
+                    </div>
+                    <button type="submit" class="btn-login">Cadastrar</button>
+                </form>
+
+                <p style="margin-top: 15px;">Já tem uma conta? <a href="/login">Entrar</a></p>
+            </div>
+        </div>
+    </div>
+
+<script>
+  {{#if error}}
+  document.addEventListener('DOMContentLoaded', function() {
+    const campo = document.querySelector('[name="{{error.campo}}"]');
+    if (campo) campo.focus();
+  });
+  {{/if}}
+</script>
+
+
+    <script src="/js/modal.js"></script>
+</body>
+
+</html>

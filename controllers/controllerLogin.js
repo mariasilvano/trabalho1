@@ -1,5 +1,6 @@
 const db = require('../models'); 
 const speakeasy = require('speakeasy');
+const bcrypt = require('bcrypt');
 
 module.exports = {
   async getLogin(req, res) {
@@ -10,12 +11,23 @@ module.exports = {
     const { login, senha } = req.body;
 
     try {
-      const usuarios = await db.Usuario.findAll({ where: { login, senha } });
+      const usuarios = await db.Usuario.findAll({ where: { login } });
+      
+      
       if (usuarios.length === 0) {
-        return res.redirect('/');
+        return res.redirect('/login');
       }
 
       const usuario = usuarios[0];
+
+      // Compara a senha digitada com o hash armazenado
+      const senhaValida = await bcrypt.compare(senha, usuario.senha); // usuario.senha é o hash
+
+      if (!senhaValida) {
+        // Senha incorreta
+        return res.redirect('/login');
+      }
+
 
       // Salva o usuário temporariamente na sessão para depois validar 2FA
       req.session.tempUser = { id: usuario.id, login: usuario.login };

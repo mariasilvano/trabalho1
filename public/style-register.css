@@ -1,0 +1,51 @@
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.modal {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 400px;
+  text-align: center;
+}
+
+.modal img {
+  max-width: 200px;
+  margin: 1rem 0;
+}
+
+#fechar-modal {
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  background-color: #2196f3;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+#fechar-modal:hover {
+  background-color: #1976d2;
+}
+
+/* Sobrescrever card-login para remover alinhamento centralizado */
+.card-login {
+    align-items: stretch;
+}
+
+.modal *:not(button) {
+  color: #000;
+}
+
+
