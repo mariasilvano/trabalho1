@@ -1,5 +1,12 @@
 ## Trabalho Prático 1 – Sistema de Comunicação Segura entre Usuários
 
+## 👥 Integrantes do Grupo
+
+> **Maria Gabriela Silvano** – RA: **2272636**  
+> **Miguel da Silva Peloso** – RA: **2419173**  
+> **Rafael Couto Lira** – RA: **2409976**  
+> **Vitor Bertoncello** – RA: **2419220**
+
 Foi desenvolvido uma aplicação prática que simula a troca segura de mensagens entre dois usuários (Alice e Bob), utilizando:
  - Hash para verificação de integridade.
  - Criptografia simétrica para proteger o conteúdo da mensagem.
