@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const { Mensagem, Usuario } = require('../models');
-const { verificarAssinatura } = require('../utils/cryptoHelpers');
+const { verificarAssinaturaCompleta } = require('../utils/cryptoHelpers');
+
 
 function getChat(req, res) {
   if (!req.session.userId) return res.redirect('/login');
@@ -59,6 +60,25 @@ async function salvarMensagem(req, res) {
   }
 }
 
+async function listarDestinatarios(req, res) {
+  const userId = req.session.userId;
+  const userLogin = req.session.login;
+
+  if (!userId) return res.status(401).json({ erro: 'Não autenticado' });
+
+  try {
+    const usuarios = await Usuario.findAll({
+      where: { login: { [require('sequelize').Op.ne]: userLogin } }
+    });
+    const logins = usuarios.map(u => u.login);
+    res.json(logins);
+  } catch (e) {
+    res.status(500).json({ erro: 'Erro ao listar destinatários' });
+  }
+}
+
+
+
 async function listarMensagens(req, res) {
   const usuarioId = req.session.userId;
   if (!usuarioId) return res.status(401).json({ erro: 'Usuário não autenticado' });
@@ -74,74 +94,92 @@ async function listarMensagens(req, res) {
       const erros = [];
       const remetente = msg.Remetente.login;
 
+     
       const textoCifrado = Buffer.from(msg.mensagemCriptografada, 'base64');
       const chave = Buffer.from(msg.chaveCriptografada, 'base64');
       const iv = Buffer.from(msg.vetor, 'base64');
-
       let mensagemOriginal;
+
       try {
         const decipher = crypto.createDecipheriv('aes-256-cbc', chave, iv);
-        mensagemOriginal = decipher.update(textoCifrado);
-        mensagemOriginal = Buffer.concat([mensagemOriginal, decipher.final()]);
-        mensagemOriginal = mensagemOriginal.toString('utf-8');
-      } catch (e) {
-        return {
-          erro: 'Erro ao descriptografar',
-          remetente,
-        };
+        mensagemOriginal = Buffer.concat([decipher.update(textoCifrado), decipher.final()]).toString('utf-8');
+      } catch {
+        return { erro: `Erro ao descriptografar de ${remetente}`, remetente };
       }
 
       
       const hashCalculado = crypto.createHash('sha256').update(mensagemOriginal).digest('base64');
-      if (hashCalculado !== msg.hashMensagem) {
+      const hashValido = hashCalculado === msg.hashMensagem;
+      if (!hashValido) {
         erros.push('Hash inválido');
       }
 
-      
-      const resultadoAssinatura = verificarAssinatura(
-        mensagemOriginal,
-        msg.assinaturaDigital,
-        msg.certificado
-      );
-
-      if (!resultadoAssinatura.valido) {
-        erros.push(resultadoAssinatura.erro);
-      }
-
-      
+     
+      let certificadoObj = {};
+      let certificadoValido = true;
       try {
-        const certificado = JSON.parse(msg.certificado);
-        if (certificado.nome !== remetente) {
-          erros.push('Certificado inválido');
+        certificadoObj = typeof msg.certificado === 'string'
+          ? JSON.parse(msg.certificado)
+          : msg.certificado;
+
+        if (
+          !certificadoObj ||
+          typeof certificadoObj !== 'object' ||
+          !certificadoObj.nome ||
+          !(certificadoObj.chavePublica || certificadoObj.publicKey)
+        ) {
+          certificadoValido = false;
         }
       } catch {
+        certificadoValido = false;
+      }
+      if (!certificadoValido) {
         erros.push('Certificado inválido');
+        erros.push('Assinatura não pôde ser validada devido a certificado inválido');
       }
 
-      if (erros.length > 0) {
+      
+      if (certificadoValido) {
+        const errosAssinatura = verificarAssinaturaCompleta(
+          mensagemOriginal,
+          msg.assinaturaDigital,
+          certificadoObj.chavePublica || certificadoObj.publicKey || '',
+          certificadoObj.nome || '',
+          remetente
+        );
+        erros.push(...errosAssinatura);
+      }
+
+      
+      const errosUnicos = [...new Set(erros)];
+      if (errosUnicos.length > 0) {
         return {
-          erro: erros.join(' e '),
+          erro: `${errosUnicos.join(' e ')} de ${remetente}`,
           remetente,
         };
       }
 
+      
       return {
-        texto: msg.mensagemCriptografada,
+        texto: mensagemOriginal,
         chaveAES: msg.chaveCriptografada,
         iv: msg.vetor,
         assinatura: msg.assinaturaDigital,
         hash: msg.hashMensagem,
-        certificate: JSON.parse(msg.certificado),
+        certificate: certificadoObj,
         remetente,
       };
     });
 
     res.json({ mensagens: mensagensProcessadas });
   } catch (e) {
-    console.error("Erro ao listar mensagens:", e);
+    console.error('Erro ao listar mensagens:', e);
     res.status(500).json({ erro: 'Erro ao listar mensagens' });
   }
 }
+
+
+
 
 
 async function inicializarChaves() {
@@ -151,6 +189,7 @@ async function inicializarChaves() {
 module.exports = {
   getChat,
   salvarMensagem,
+  listarDestinatarios,
   listarMensagens,
   inicializarChaves
 };

@@ -18,6 +18,8 @@ route.get('/chat', controllerChat.getChat);
 
 // API - Salvar nova mensagem
 route.post('/salvarMensagem', controllerChat.salvarMensagem);
+route.get('/destinatarios', controllerChat.listarDestinatarios);
+
 // API - Listar mensagens (do usuário logado)
 route.get('/listarMensagens', controllerChat.listarMensagens);
 

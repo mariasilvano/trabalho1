@@ -19,7 +19,7 @@ header {
   box-shadow: 0 2px 4px rgba(0,0,0,0.5);
 }
 
-#chat {
+#chat-container {
   flex-grow: 1;
   padding: 15px;
   overflow-y: auto;
@@ -124,3 +124,25 @@ header {
   background-color: #77d4ff;
   border-radius: 10px;
 }
+
+#destinatario-select {
+  background: #3a3255;
+  color: #77d4ff;
+  border: none;
+  border-radius: 20px;
+  padding: 10px 15px;
+  font-size: 1rem;
+  margin-right: 10px;
+  outline: none;
+  transition: background 0.3s ease;
+}
+
+#destinatario-select:focus {
+  background: #4a4175;
+}
+
+#destinatario-select option {
+  background: #2a2241;
+  color: #77d4ff;
+}
+
