@@ -12,13 +12,16 @@
 
   <input type="hidden" id="user-logado" value="{{user}}" />
 
-  <div id="chat"></div>
+  <div id="chat-container"></div>
+
 
   <div id="input-area">
-    <input id="input-message" type="text" placeholder="Digite sua mensagem" />
-    <button id="send-btn">Enviar</button>
-    <button id="fetch-btn">Buscar mensagens</button>
-  </div>
+  <select id="destinatario-select"></select>
+  <input id="input-message" type="text" placeholder="Digite sua mensagem" />
+  <button id="send-btn">Enviar</button>
+  <button id="fetch-btn">Buscar mensagens</button>
+</div>
+
 
   <script src="/js/chat.js"></script>
 </body>

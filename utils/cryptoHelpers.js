@@ -5,45 +5,51 @@ function calcularHash(texto) {
 }
 
 function verificarHash(mensagem, hashEsperado) {
-  const hashCalculado = calcularHash(mensagem);
+  const hashCalculado = crypto.createHash('sha256').update(mensagem).digest('base64');
   return hashCalculado === hashEsperado;
 }
 
-function verificarAssinatura(mensagem, assinaturaBase64, certificadoJson) {
+function verificarAssinaturaCompleta(mensagem, assinaturaBase64, chavePublicaPEM, nomeCertificado, nomeEsperado) {
+  const erros = [];
+  let chavePublica;
+
+  if (nomeCertificado !== nomeEsperado) {
+    erros.push('Certificado inválido');
+  }
+
   try {
-    const certificado = JSON.parse(certificadoJson);
+    const chaveLimpa = chavePublicaPEM
+      .replace(/-----BEGIN PUBLIC KEY-----/, '')
+      .replace(/-----END PUBLIC KEY-----/, '')
+      .replace(/\s/g, '');
+    const chaveDer = Buffer.from(chaveLimpa, 'base64');
+    chavePublica = crypto.createPublicKey({ key: chaveDer, format: 'der', type: 'spki' });
+  } catch {
+    erros.push('Certificado inválido');
+    
+    return [...new Set(erros)];
+  }
 
-    if (!certificado.nome || !certificado.chavePublica) {
-      return { valido: false, erro: 'Certificado inválido' };
-    }
-
-    const chaveDer = Buffer.from(certificado.chavePublica, 'base64'); 
-    const chavePublica = crypto.createPublicKey({
-      key: chaveDer,
-      format: 'der',
-      type: 'spki'
-    });
-
+  try {
     const assinatura = Buffer.from(assinaturaBase64, 'base64');
-
-    const verificado = crypto.verify(
+    const assinaturaValida = crypto.verify(
       'sha256',
       Buffer.from(mensagem),
       chavePublica,
       assinatura
     );
-
-    return verificado
-      ? { valido: true }
-      : { valido: false, erro: 'Assinatura inválida' };
-
-  } catch (e) {
-    return { valido: false, erro: 'Certificado inválido' };
+    if (!assinaturaValida) erros.push('Assinatura inválida');
+  } catch {
+    erros.push('Assinatura inválida');
   }
+
+  return [...new Set(erros)];
 }
+
+
 
 module.exports = {
   calcularHash,
   verificarHash,
-  verificarAssinatura,
+  verificarAssinaturaCompleta
 };
